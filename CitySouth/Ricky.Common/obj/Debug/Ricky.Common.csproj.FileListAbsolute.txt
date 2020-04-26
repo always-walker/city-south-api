@@ -95,3 +95,4 @@ D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\ICSharpCode.S
 D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.csprojResolveAssemblyReference.cache
 D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.dll
 D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.pdb
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\Newtonsoft.Json.dll
