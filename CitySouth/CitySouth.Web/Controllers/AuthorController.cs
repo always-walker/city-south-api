@@ -12,7 +12,7 @@ namespace CitySouth.Web.Controllers
     {
         private List<sysAuthor> GetAuthors(int ParentAuthorId)
         {
-            List<sysAuthor> list = db.sysAuthors.Where(m => m.ParentAuthorId == ParentAuthorId).OrderBy(m => m.Sort).ToList();
+            List<sysAuthor> list = db.sysAuthors.Where(m => m.ParentAuthorId == ParentAuthorId).OrderBy(m => m.Sort).ToList();  
             foreach (sysAuthor autor in list)
             {
                 if (db.sysAuthors.Count(m => m.ParentAuthorId == autor.AuthorId) > 0)
