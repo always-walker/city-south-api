@@ -20,7 +20,7 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpPost]
-        [Author("post.add")]
+        [Author("post.manage")]
         public Dictionary<string, object> add([FromBody]Post post)
         {
             if (string.IsNullOrEmpty(post.PostType))
@@ -42,7 +42,7 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpPut]
-        [Author("post.modify")]
+        [Author("post.manage")]
         public Dictionary<string, object> modify([FromBody]Post post)
         {
             if (string.IsNullOrEmpty(post.PostType))

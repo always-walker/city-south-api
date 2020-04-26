@@ -147,6 +147,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AuthorController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\CategoryController.cs" />
     <Compile Include="Controllers\CostConfigController.cs" />
     <Compile Include="Controllers\ElseCostController.cs" />
     <Compile Include="Controllers\EmployeeController.cs" />

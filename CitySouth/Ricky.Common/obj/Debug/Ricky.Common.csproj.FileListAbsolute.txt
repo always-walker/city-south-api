@@ -84,3 +84,14 @@ D:\soft\CitySouth\CitySouth_API\CitySouth\Ricky.Common\bin\Debug\NPOI.OOXML.dll
 D:\soft\CitySouth\CitySouth_API\CitySouth\Ricky.Common\bin\Debug\NPOI.OpenXml4Net.dll
 D:\soft\CitySouth\CitySouth_API\CitySouth\Ricky.Common\bin\Debug\NPOI.OpenXmlFormats.dll
 D:\soft\CitySouth\CitySouth_API\CitySouth\Ricky.Common\bin\Debug\ICSharpCode.SharpZipLib.xml
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\Ricky.Common.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\Ricky.Common.pdb
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\ICSharpCode.SharpZipLib.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\NPOI.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\NPOI.OOXML.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\NPOI.OpenXml4Net.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\NPOI.OpenXmlFormats.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\bin\Debug\ICSharpCode.SharpZipLib.xml
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.csprojResolveAssemblyReference.cache
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.dll
+D:\soft\city-south\city-south-api\CitySouth\Ricky.Common\obj\Debug\Ricky.Common.pdb
