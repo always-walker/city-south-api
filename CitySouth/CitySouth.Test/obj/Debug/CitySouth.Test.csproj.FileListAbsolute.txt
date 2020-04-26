@@ -1,0 +1,15 @@
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\CitySouth.Test.exe.config
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\CitySouth.Test.exe
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\CitySouth.Test.pdb
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\Newtonsoft.Json.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\Newtonsoft.Json.xml
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\obj\Debug\CitySouth.Test.csprojResolveAssemblyReference.cache
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\obj\Debug\CitySouth.Test.exe
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\obj\Debug\CitySouth.Test.pdb
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\LumiSoft.Net.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\ICSharpCode.SharpZipLib.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\NPOI.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\NPOI.OOXML.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\NPOI.OpenXml4Net.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\NPOI.OpenXmlFormats.dll
+D:\soft\CitySouth\CitySouth_API\CitySouth\CitySouth.Test\bin\Debug\ICSharpCode.SharpZipLib.xml

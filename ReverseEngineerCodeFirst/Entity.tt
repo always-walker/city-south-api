@@ -1,0 +1,34 @@
+<#@ template hostspecific="true" language="C#" #>
+<#@ include file="EF.Utility.CS.ttinclude" #><#@
+ output extension=".cs" #><#
+
+    var efHost = (EfTextTemplateHost)Host;
+    var code = new CodeGenerationTools(this);
+#>
+using System;
+using System.Collections.Generic;
+
+namespace <#= code.EscapeNamespace(efHost.Namespace) #>
+{
+    public partial class <#= efHost.EntityType.Name #>
+    {
+<# 
+    foreach (var property in efHost.EntityType.Properties)
+    {
+        var typeUsage = code.Escape(property.TypeUsage);
+
+        // Fix-up spatial types for EF6
+        if (efHost.EntityFrameworkVersion >= new Version(6, 0)
+            && typeUsage.StartsWith("System.Data.Spatial."))
+        {
+            typeUsage = typeUsage.Replace(
+                "System.Data.Spatial.",
+                "System.Data.Entity.Spatial.");
+        }
+#>
+        <#= Accessibility.ForProperty(property) #> <#= typeUsage #> <#= code.Escape(property) #> { get; set; }
+<#
+    }
+#>
+    }
+}

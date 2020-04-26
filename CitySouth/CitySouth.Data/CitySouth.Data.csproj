@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BE027BBA-D36E-42CF-AE5E-115C373657AC}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CitySouth.Data</RootNamespace>
+    <AssemblyName>CitySouth.Data</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.1.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Employee.cs" />
+    <Compile Include="Estate.cs" />
+    <Compile Include="HouseBatch.cs" />
+    <Compile Include="LoginModel.cs" />
+    <Compile Include="Menus.cs" />
+    <Compile Include="Models\Article.cs" />
+    <Compile Include="Models\CitySouthContext.cs" />
+    <Compile Include="Models\CostConfig.cs" />
+    <Compile Include="Models\ElseCost.cs" />
+    <Compile Include="Models\Employee.cs" />
+    <Compile Include="Models\EmployeePostHistory.cs" />
+    <Compile Include="Models\Estate.cs" />
+    <Compile Include="Models\Good.cs" />
+    <Compile Include="Models\GoodsCategory.cs" />
+    <Compile Include="Models\GoodsOut.cs" />
+    <Compile Include="Models\GoodsOutDetail.cs" />
+    <Compile Include="Models\GoodsReceipt.cs" />
+    <Compile Include="Models\GoodsReceiptDetail.cs" />
+    <Compile Include="Models\GoodsStorage.cs" />
+    <Compile Include="Models\HandHouse.cs" />
+    <Compile Include="Models\House.cs" />
+    <Compile Include="Models\Mapping\ArticleMap.cs" />
+    <Compile Include="Models\Mapping\CostConfigMap.cs" />
+    <Compile Include="Models\Mapping\ElseCostMap.cs" />
+    <Compile Include="Models\Mapping\EmployeeMap.cs" />
+    <Compile Include="Models\Mapping\EmployeePostHistoryMap.cs" />
+    <Compile Include="Models\Mapping\EstateMap.cs" />
+    <Compile Include="Models\Mapping\GoodMap.cs" />
+    <Compile Include="Models\Mapping\GoodsCategoryMap.cs" />
+    <Compile Include="Models\Mapping\GoodsOutDetailMap.cs" />
+    <Compile Include="Models\Mapping\GoodsOutMap.cs" />
+    <Compile Include="Models\Mapping\GoodsReceiptDetailMap.cs" />
+    <Compile Include="Models\Mapping\GoodsReceiptMap.cs" />
+    <Compile Include="Models\Mapping\GoodsStorageMap.cs" />
+    <Compile Include="Models\Mapping\HandHouseMap.cs" />
+    <Compile Include="Models\Mapping\HouseMap.cs" />
+    <Compile Include="Models\Mapping\OwnerCarMap.cs" />
+    <Compile Include="Models\Mapping\OwnerFamilyMap.cs" />
+    <Compile Include="Models\Mapping\OwnerMap.cs" />
+    <Compile Include="Models\Mapping\ParkingMap.cs" />
+    <Compile Include="Models\Mapping\PostMap.cs" />
+    <Compile Include="Models\Mapping\PropertyMap.cs" />
+    <Compile Include="Models\Mapping\sysAuthorInRoleMap.cs" />
+    <Compile Include="Models\Mapping\sysAuthorMap.cs" />
+    <Compile Include="Models\Mapping\sysConfigMap.cs" />
+    <Compile Include="Models\Mapping\sysRoleMap.cs" />
+    <Compile Include="Models\Mapping\sysUserInEstateMap.cs" />
+    <Compile Include="Models\Mapping\sysUserInRoleMap.cs" />
+    <Compile Include="Models\Mapping\sysUserLogMap.cs" />
+    <Compile Include="Models\Mapping\sysUserMap.cs" />
+    <Compile Include="Models\Mapping\WaterAndElectricityMap.cs" />
+    <Compile Include="Models\Mapping\WorkPlanMap.cs" />
+    <Compile Include="Models\Mapping\WorkPlanTimeMap.cs" />
+    <Compile Include="Models\Mapping\WorkTimeConfigMap.cs" />
+    <Compile Include="Models\MSreplication_options.cs" />
+    <Compile Include="Models\Owner.cs" />
+    <Compile Include="Models\OwnerCar.cs" />
+    <Compile Include="Models\OwnerFamily.cs" />
+    <Compile Include="Models\Parking.cs" />
+    <Compile Include="Models\Post.cs" />
+    <Compile Include="Models\Property.cs" />
+    <Compile Include="Models\sysAuthor.cs" />
+    <Compile Include="Models\sysAuthorInRole.cs" />
+    <Compile Include="Models\sysConfig.cs" />
+    <Compile Include="Models\sysRole.cs" />
+    <Compile Include="Models\sysUser.cs" />
+    <Compile Include="Models\sysUserInEstate.cs" />
+    <Compile Include="Models\sysUserInRole.cs" />
+    <Compile Include="Models\sysUserLog.cs" />
+    <Compile Include="Models\WaterAndElectricity.cs" />
+    <Compile Include="Models\WorkPlan.cs" />
+    <Compile Include="Models\WorkPlanTime.cs" />
+    <Compile Include="Models\WorkTimeConfig.cs" />
+    <Compile Include="Owner.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="MonthPlan.cs" />
+    <Compile Include="SearchModel.cs" />
+    <Compile Include="sysAuthor.cs" />
+    <Compile Include="sysRole.cs" />
+    <Compile Include="sysUser.cs" />
+    <Compile Include="sysUserLog.cs" />
+    <Compile Include="UserPassword.cs" />
+    <Compile Include="WorkPlan.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="CodeTemplates\ReverseEngineerCodeFirst\Context.tt" />
+    <Content Include="CodeTemplates\ReverseEngineerCodeFirst\Entity.tt" />
+    <Content Include="CodeTemplates\ReverseEngineerCodeFirst\Mapping.tt" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
