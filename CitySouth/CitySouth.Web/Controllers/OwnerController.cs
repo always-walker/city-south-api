@@ -1,10 +1,15 @@
 ﻿using CitySouth.Data;
 using CitySouth.Data.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using System.Web;
 using System.Web.Http;
 
 namespace CitySouth.Web.Controllers
@@ -18,8 +23,8 @@ namespace CitySouth.Web.Controllers
             var a = from b in db.Owners
                     join c in db.Houses on b.HouseId equals c.HouseId
                     join d in db.Estates on c.EstateId equals d.EstateId
-                    select new 
-                    { 
+                    select new
+                    {
                         d.EstateName,
                         c.EstateId,
                         c.Building,
@@ -46,7 +51,7 @@ namespace CitySouth.Web.Controllers
             }
             result["count"] = a.Count();
             var list = a.OrderBy(w => w.EstateId).ThenBy(w => w.Building).ThenBy(w => w.Unit).ThenBy(w => w.Floor).ThenBy(w => w.No).Skip((model.PageIndex - 1) * model.PageSize).Take(model.PageSize).ToList();
-            foreach(var item in list)
+            foreach (var item in list)
             {
                 item.owner.FamilyList = db.OwnerFamilies.Where(w => w.OwnerId == item.owner.OwnerId).ToList();
                 item.owner.CarList = db.OwnerCars.Where(w => w.OwnerId == item.owner.OwnerId).ToList();
@@ -99,7 +104,7 @@ namespace CitySouth.Web.Controllers
                         b.OwnerName,
                         b.CheckInName,
                         b.Phone,
-                        carList = db.OwnerCars.Where(x=>x.OwnerId == b.OwnerId).ToList()
+                        carList = db.OwnerCars.Where(x => x.OwnerId == b.OwnerId).ToList()
                     };
             if (model.FkId != null && model.FkId > 0)
                 a = a.Where(w => w.EstateId == model.FkId);
@@ -171,8 +176,8 @@ namespace CitySouth.Web.Controllers
             else
             {
                 Owner newOwner = db.Owners.FirstOrDefault(w => w.OwnerId == owner.OwnerId);
-                Ricky.ObjectCopy.Copy<Owner>(owner, newOwner, new string[] { "HouseId"});
-                if(newOwner.PropertyExpireDate == null)
+                Ricky.ObjectCopy.Copy<Owner>(owner, newOwner, new string[] { "HouseId" });
+                if (newOwner.PropertyExpireDate == null)
                     newOwner.PropertyExpireDate = newOwner.PropertyStartDate;
                 //更新家庭信息和房产信息
                 if (owner.FamilyList != null && owner.FamilyList.Count > 0)
@@ -234,7 +239,7 @@ namespace CitySouth.Web.Controllers
                 result["code"] = "failed";
                 message.Add("此业主已缴纳水电费，无法删除。");
             }
-            else if(db.Parkings.Count(w=>(from b in db.OwnerCars where b.OwnerId == owner.OwnerId select b.CarId).Contains(w.CarId)) > 0)
+            else if (db.Parkings.Count(w => (from b in db.OwnerCars where b.OwnerId == owner.OwnerId select b.CarId).Contains(w.CarId)) > 0)
             {
                 result["code"] = "failed";
                 message.Add("此业主已缴纳停车费，无法删除。");
@@ -255,7 +260,7 @@ namespace CitySouth.Web.Controllers
         }
         [HttpDelete]
         [Author("owner.modify")]
-        public Dictionary<string, object> DeletePeople(int id) 
+        public Dictionary<string, object> DeletePeople(int id)
         {
             OwnerFamily family = db.OwnerFamilies.FirstOrDefault(w => w.PeopleId == id);
             db.OwnerFamilies.Remove(family);
@@ -279,6 +284,65 @@ namespace CitySouth.Web.Controllers
             }
             result["message"] = message;
             return result;
+        }
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<HttpResponseMessage> import()
+        {
+            // Check whether the POST operation is MultiPart?
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+            // Prepare CustomMultipartFormDataStreamProvider in which our multipart form
+            // data will be loaded.
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
+            if (!Directory.Exists(fileSaveLocation))
+                Directory.CreateDirectory(fileSaveLocation);
+            CustomMultipartFormDataStreamProvider provider = new CustomMultipartFormDataStreamProvider(fileSaveLocation);
+            List<string> files = new List<string>();
+            try
+            {
+                foreach (MultipartFileData file in provider.FileData)
+                {
+                    files.Add(Path.GetFileName(file.LocalFileName));
+                }
+                await Request.Content.ReadAsMultipartAsync(provider);
+                // Send OK Response along with saved file names to the client.
+                return Request.CreateResponse(HttpStatusCode.OK, files);
+            }
+            catch (System.Exception e)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
+            }
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        public HttpResponseMessage output()
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
+            var filePath = fileSaveLocation + "\\2352885_m.jpg";
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = "2352885_m.jpg"
+                };
+                return response;
+            }
+            return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+        }
+    }
+    public class CustomMultipartFormDataStreamProvider : MultipartFormDataStreamProvider
+    {
+        public CustomMultipartFormDataStreamProvider(string path) : base(path) { }
+ 
+        public override string GetLocalFileName(HttpContentHeaders headers)
+        {
+            return headers.ContentDisposition.FileName.Replace("\"", string.Empty);
         }
     }
 }
