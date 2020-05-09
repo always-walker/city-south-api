@@ -9,7 +9,7 @@ using NPOI.HSSF.Util;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
-namespace ExcelCompare
+namespace Ricky
 {
     public class Excel
     {
@@ -123,12 +123,6 @@ namespace ExcelCompare
         private void InitializeWorkbook()
         {
             xssfworkbook = new XSSFWorkbook();
-            //DocumentSummaryInformation dsi = PropertySetFactory.CreateDocumentSummaryInformation();
-            //dsi.Company = "贵州财经大学图书馆";
-            //xssfworkbook.set = dsi;
-            //SummaryInformation si = PropertySetFactory.CreateSummaryInformation();
-            //si.Subject = "科研支持中心制造";
-            //xssfworkbook.SummaryInformation = si;
         }
     }
 }

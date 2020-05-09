@@ -165,6 +165,7 @@
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Controllers\WaterAndElectricityController.cs" />
     <Compile Include="Controllers\WorkPlanController.cs" />
+    <Compile Include="Utils\CustomMultipartFormDataStreamProvider.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

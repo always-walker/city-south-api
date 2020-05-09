@@ -296,7 +296,7 @@ namespace CitySouth.Web.Controllers
             }
             // Prepare CustomMultipartFormDataStreamProvider in which our multipart form
             // data will be loaded.
-            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
             if (!Directory.Exists(fileSaveLocation))
                 Directory.CreateDirectory(fileSaveLocation);
             CustomMultipartFormDataStreamProvider provider = new CustomMultipartFormDataStreamProvider(fileSaveLocation);
@@ -334,15 +334,6 @@ namespace CitySouth.Web.Controllers
                 return response;
             }
             return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
-        }
-    }
-    public class CustomMultipartFormDataStreamProvider : MultipartFormDataStreamProvider
-    {
-        public CustomMultipartFormDataStreamProvider(string path) : base(path) { }
- 
-        public override string GetLocalFileName(HttpContentHeaders headers)
-        {
-            return headers.ContentDisposition.FileName.Replace("\"", string.Empty);
         }
     }
 }

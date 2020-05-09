@@ -6,6 +6,10 @@ using System.Net.Http;
 using System.Web.Http;
 using CitySouth.Data.Models;
 using CitySouth.Data;
+using System.Web;
+using System.IO;
+using System.Threading.Tasks;
+using System.Net.Http.Headers;
 
 namespace CitySouth.Web.Controllers
 {
@@ -205,6 +209,61 @@ namespace CitySouth.Web.Controllers
             }
             result["message"] = message;
             return result;
+        }
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<HttpResponseMessage> import()
+        {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
+            if (!Directory.Exists(fileSaveLocation))
+                Directory.CreateDirectory(fileSaveLocation);
+            CustomMultipartFormDataStreamProvider provider = new CustomMultipartFormDataStreamProvider(fileSaveLocation);
+            List<string> files = new List<string>();
+            try
+            {
+                await Request.Content.ReadAsMultipartAsync(provider);
+                foreach (MultipartFileData file in provider.FileData)
+                {
+                    files.Add(Path.GetFileName(file.LocalFileName));
+                }
+                var filePath = fileSaveLocation + "\\" + files[0];
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = files[0]
+                };
+                return response;
+                
+            }
+            catch (System.Exception e)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
+            }
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        public HttpResponseMessage output()
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
+            var filePath = fileSaveLocation + "\\2352885_m.jpg";
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = "2352885_m.jpg"
+                };
+                return response;
+            }
+            return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }
