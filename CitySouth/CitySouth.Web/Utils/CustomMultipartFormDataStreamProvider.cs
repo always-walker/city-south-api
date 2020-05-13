@@ -15,6 +15,7 @@ namespace CitySouth
         public override string GetLocalFileName(HttpContentHeaders headers)
         {
             string Name = headers.ContentDisposition.FileName.Replace("\"", string.Empty);
+
             if (Name.EndsWith(".jpg", StringComparison.CurrentCultureIgnoreCase) ||
                  Name.EndsWith(".png", StringComparison.CurrentCultureIgnoreCase) ||
                  Name.EndsWith(".gif", StringComparison.CurrentCultureIgnoreCase) ||

@@ -115,7 +115,14 @@ namespace CitySouth.Test
             //items.Add(new LogItem("a3", new object[] { DateTime.UtcNow, DateTime.Now }));
             //string ss = JsonConvert.SerializeObject(items);
             //Console.WriteLine(ss);
-            GetEmails();
+            //GetEmails();
+            DataTable dt = new DataTable();
+            dt.Columns.Add("x");
+            DataRow dr = dt.NewRow();
+            dr[0] = DateTime.Now;
+            dt.Rows.Add(dr);
+            string xx = dt.Rows[0][0].ToString();
+            Console.WriteLine(xx);
             Console.ReadLine();
         }
     }

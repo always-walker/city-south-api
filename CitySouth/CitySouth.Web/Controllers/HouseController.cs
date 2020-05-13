@@ -10,6 +10,8 @@ using System.Web;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
+using System.Data;
+using Ricky;
 
 namespace CitySouth.Web.Controllers
 {
@@ -211,47 +213,105 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpPost]
-        [AllowAnonymous]
-        public async Task<HttpResponseMessage> import()
+        [Author("house.import")]
+        public async Task<HttpResponseMessage> Import()
         {
             if (!Request.Content.IsMimeMultipartContent())
             {
                 throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
             }
-            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
+            MultipartMemoryStreamProvider provider = await Request.Content.ReadAsMultipartAsync();
+            HttpContent content = provider.Contents.First();
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = content.Headers.ContentDisposition.FileName.Trim('"');
+            DataTable dt = Excel.ExcelToDataTable(fileName, stream);
+            dt.Columns.Add("导入状态");
+            dt.Columns.Add("导入备注");
+            foreach(DataRow dr in dt.Rows)
+            {
+                string EstateName = dr[0].ToString();
+                if (!string.IsNullOrEmpty(EstateName))
+                {
+                    List<Estate> estateList = db.Estates.ToList();
+                    int EstateId = 0;
+                    if (estateList.Count(w => w.EstateName == EstateName) > 0)
+                    {
+                        EstateId = estateList.FirstOrDefault(w => w.EstateName == EstateName).EstateId;
+                    }
+                    else
+                    {
+                        Estate estate = new Estate();
+                        estate.EstateName = EstateName;
+                        db.Estates.Add(estate);
+                        db.SaveChanges();
+                        EstateId = estate.EstateId;
+                        estateList.Add(estate);
+                    }
+                    try
+                    {
+                        House house = new House();
+                        house.EstateId = EstateId;
+                        house.HouseType = dr[1].ToString();
+                        house.Building = int.Parse(dr[2].ToString());
+                        house.Unit = int.Parse(dr[3].ToString());
+                        house.Floor = int.Parse(dr[4].ToString());
+                        house.No = int.Parse(dr[5].ToString());
+                        house.HouseNo = dr[6].ToString();
+                        house.Model = dr[7].ToString();
+                        house.Structure = dr[8].ToString();
+                        house.Floorage = double.Parse(dr[9].ToString());
+                        house.ContactTel = dr[10].ToString();
+                        house.ElseTel = dr[11].ToString();
+                        house.News = dr[12].ToString();
+                        house.IsPlace = dr[13].ToString().Equals("是");
+                        DateTime HandDate = DateTime.MinValue;
+                        if (DateTime.TryParse(dr[14].ToString(), out HandDate))
+                            house.HandDate = HandDate;
+                        house.EmptyState = dr[15].ToString().Equals("是");
+                        house.Remark = dr[16].ToString();
+                        if (db.Houses.Count(w => w.EstateId == EstateId && w.HouseNo == house.HouseNo) == 0)
+                        {
+                            db.Houses.Add(house);
+                            db.SaveChanges();
+                            dr[17] = "成功";
+                            dr[18] = "新增";
+                        }
+                        else
+                        {
+                            House newHouse = db.Houses.First(w => w.EstateId == EstateId && w.HouseNo == house.HouseNo);
+                            Ricky.ObjectCopy.Copy<House>(house, newHouse, new string[] { "HouseId", "IsHasOwner" });
+                            db.SaveChanges();
+                            dr[17] = "成功";
+                            dr[18] = "修改";
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        dr[17] = "失败";
+                        dr[18] = e.Message;
+                    }
+                }
+                else
+                {
+                    dr[17] = "失败";
+                    dr[18] = "缺少所属小区名称";
+                }
+            }
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/house");
             if (!Directory.Exists(fileSaveLocation))
                 Directory.CreateDirectory(fileSaveLocation);
-            CustomMultipartFormDataStreamProvider provider = new CustomMultipartFormDataStreamProvider(fileSaveLocation);
-            List<string> files = new List<string>();
-            try
-            {
-                await Request.Content.ReadAsMultipartAsync(provider);
-                foreach (MultipartFileData file in provider.FileData)
-                {
-                    files.Add(Path.GetFileName(file.LocalFileName));
-                }
-                var filePath = fileSaveLocation + "\\" + files[0];
-                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
-                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
-                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
-                    FileName = files[0]
-                };
-                return response;
-                
-            }
-            catch (System.Exception e)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
-            }
+            string Name = fileName.Substring(0, fileName.LastIndexOf('.'));
+            Excel excel = new Excel(dt);
+            string saveFileName = string.Format("{1}{2}.xlsx",fileSaveLocation, Name, DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+            excel.Save(fileSaveLocation + "\\" + saveFileName);
+            return Request.CreateResponse(HttpStatusCode.OK, new { Status = 1, filename = saveFileName });
         }
-        [AllowAnonymous]
         [HttpGet]
-        public HttpResponseMessage output()
+        [Author("house.import")]
+        public HttpResponseMessage ImportFile([FromUri]string filename)
         {
-            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
-            var filePath = fileSaveLocation + "\\2352885_m.jpg";
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/house");
+            var filePath = fileSaveLocation + "\\" + filename;
             if (File.Exists(filePath))
             {
                 HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -259,11 +319,30 @@ namespace CitySouth.Web.Controllers
                 response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
                 {
-                    FileName = "2352885_m.jpg"
+                    FileName = HttpUtility.UrlEncode(filename)
                 };
                 return response;
             }
             return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        public HttpResponseMessage output()
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
+            var filePath = fileSaveLocation + "\\-56665109_出题概要.jpg";
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode("出题概要.jpg")
+                };
+                return response;
+            }
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }

@@ -6,6 +6,13 @@ using System.Net.Http;
 using System.Web.Http;
 using CitySouth.Data;
 using CitySouth.Data.Models;
+using System.Web;
+using System.IO;
+using System.Net.Http.Headers;
+using Ricky;
+using System.Data;
+using System.Threading.Tasks;
+
 
 namespace CitySouth.Web.Controllers
 {
@@ -141,6 +148,140 @@ namespace CitySouth.Web.Controllers
             }
             result["message"] = message;
             return result;
+        }
+        [HttpPost]
+        [Author("else-cost.import")]
+        public async Task<HttpResponseMessage> Import()
+        {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+            MultipartMemoryStreamProvider provider = await Request.Content.ReadAsMultipartAsync();
+            HttpContent content = provider.Contents.First();
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = content.Headers.ContentDisposition.FileName.Trim('"');
+            DataTable dt = Excel.ExcelToDataTable(fileName, stream);
+            dt.Columns.Add("导入状态");
+            dt.Columns.Add("导入备注");
+            foreach (DataRow dr in dt.Rows)
+            {
+                string EstateName = dr[0].ToString();
+                if (!string.IsNullOrEmpty(EstateName))
+                {
+                    Estate estate = db.Estates.FirstOrDefault(w => w.EstateName == EstateName);
+                    if (estate != null)
+                    {
+                        string HouseNo = dr[1].ToString();
+                        House house = db.Houses.FirstOrDefault(w => w.EstateId == estate.EstateId && w.HouseNo == HouseNo);
+                        if (house != null)
+                        {
+                            Owner owner = db.Owners.FirstOrDefault(w => w.HouseId == house.HouseId);
+                            if (owner != null)
+                            {
+                                try
+                                {
+                                    ElseCost elseC = new ElseCost();
+                                    elseC.OwnerId = owner.OwnerId;
+                                    elseC.PayerName = owner.CheckInName;
+                                    elseC.CostName = dr[2].ToString();
+                                    elseC.Amount = decimal.Parse(dr[3].ToString());
+                                    DateTime PayTime = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[4].ToString(), out PayTime))
+                                        elseC.PayTime = PayTime;
+                                    DateTime StartDate = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[5].ToString(), out StartDate))
+                                        elseC.StartDate = StartDate;
+                                    DateTime EndDate = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[6].ToString(), out EndDate))
+                                        elseC.EndDate = EndDate;
+                                    elseC.ReceiptNo = dr[7].ToString();
+                                    elseC.VoucherNo = dr[8].ToString();
+                                    elseC.OprationName = dr[9].ToString();
+                                    elseC.PayWay = dr[10].ToString();
+                                    elseC.Remark = dr[11].ToString();
+                                    if (elseC.PayTime != null)
+                                    {
+                                        elseC.Status = 1;
+                                        elseC.CreateTime = elseC.PayTime.Value;
+                                    }
+                                    else
+                                    {
+                                        elseC.CreateTime = DateTime.Now;
+                                    }
+                                    if (db.ElseCosts.Count(w => w.OwnerId == elseC.OwnerId && w.Amount == elseC.Amount && w.PayTime == elseC.PayTime && w.StartDate == elseC.StartDate && w.EndDate == elseC.EndDate) == 0)
+                                    {
+                                        db.ElseCosts.Add(elseC);
+                                        db.SaveChanges();
+                                        dr[12] = "成功";
+                                        dr[13] = "新增";
+                                    }
+                                    else
+                                    {
+                                        ElseCost newElseC = db.ElseCosts.First(w => w.OwnerId == elseC.OwnerId && w.Amount == elseC.Amount && w.PayTime == elseC.PayTime && w.StartDate == elseC.StartDate && w.EndDate == elseC.EndDate);
+                                        Ricky.ObjectCopy.Copy<ElseCost>(elseC, newElseC, new string[] { "ElseCostId", "PayerName", "UserId" });
+                                        db.SaveChanges();
+                                        dr[12] = "成功";
+                                        dr[13] = "修改";
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    dr[12] = "失败";
+                                    dr[13] = e.Message;
+                                }
+                            }
+                            else
+                            {
+                                dr[12] = "失败";
+                                dr[13] = "没有找到业主";
+                            }
+                        }
+                        else
+                        {
+                            dr[12] = "失败";
+                            dr[13] = "沒有找到此房产";
+                        }
+                    }
+                    else
+                    {
+                        dr[12] = "失败";
+                        dr[13] = "沒有找到此小区";
+                    }
+                }
+                else
+                {
+                    dr[12] = "失败";
+                    dr[13] = "缺少所属小区名称";
+                }
+            }
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/else-cost");
+            if (!Directory.Exists(fileSaveLocation))
+                Directory.CreateDirectory(fileSaveLocation);
+            string Name = fileName.Substring(0, fileName.LastIndexOf('.'));
+            Excel excel = new Excel(dt);
+            string saveFileName = string.Format("{1}{2}.xlsx", fileSaveLocation, Name, DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+            excel.Save(fileSaveLocation + "\\" + saveFileName);
+            return Request.CreateResponse(HttpStatusCode.OK, new { Status = 1, filename = saveFileName });
+        }
+        [HttpGet]
+        [Author("else-cost.import")]
+        public HttpResponseMessage ImportFile([FromUri]string filename)
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/else-cost");
+            var filePath = fileSaveLocation + "\\" + filename;
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode(filename)
+                };
+                return response;
+            }
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }

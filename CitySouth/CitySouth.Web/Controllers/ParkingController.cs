@@ -6,6 +6,12 @@ using System.Net.Http;
 using System.Web.Http;
 using CitySouth.Data;
 using CitySouth.Data.Models;
+using System.Web;
+using System.IO;
+using System.Net.Http.Headers;
+using Ricky;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace CitySouth.Web.Controllers
 {
@@ -140,6 +146,149 @@ namespace CitySouth.Web.Controllers
             }
             result["message"] = message;
             return result;
+        }
+        [HttpPost]
+        [Author("parking.import")]
+        public async Task<HttpResponseMessage> Import()
+        {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+            MultipartMemoryStreamProvider provider = await Request.Content.ReadAsMultipartAsync();
+            HttpContent content = provider.Contents.First();
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = content.Headers.ContentDisposition.FileName.Trim('"');
+            DataTable dt = Excel.ExcelToDataTable(fileName, stream);
+            dt.Columns.Add("导入状态");
+            dt.Columns.Add("导入备注");
+            foreach (DataRow dr in dt.Rows)
+            {
+                string EstateName = dr[0].ToString();
+                if (!string.IsNullOrEmpty(EstateName))
+                {
+                    Estate estate = db.Estates.FirstOrDefault(w => w.EstateName == EstateName);
+                    if (estate != null)
+                    {
+                        string HouseNo = dr[1].ToString();
+                        House house = db.Houses.FirstOrDefault(w => w.EstateId == estate.EstateId && w.HouseNo == HouseNo);
+                        if (house != null)
+                        {
+                            Owner owner = db.Owners.FirstOrDefault(w => w.HouseId == house.HouseId);
+                            if (owner != null)
+                            {
+                                string CarNumber = dr[2].ToString();
+                                OwnerCar car = db.OwnerCars.FirstOrDefault(w => w.OwnerId == owner.OwnerId && w.CarNumber == CarNumber);
+                                if(car == null)
+                                {
+                                    car = new OwnerCar();
+                                    car.OwnerId = owner.OwnerId;
+                                    car.CarNumber = CarNumber;
+                                    db.OwnerCars.Add(car);
+                                    db.SaveChanges();
+                                }
+                                try
+                                {
+                                    Parking parking = new Parking();
+                                    parking.CarId = car.CarId;
+                                    parking.PayerName = owner.CheckInName;
+                                    parking.UnitPrice = decimal.Parse(dr[3].ToString());
+                                    CostConfig config = db.CostConfigs.FirstOrDefault(w => w.EstateId == estate.EstateId && w.ConfigType == "parking" && w.UnitPrice == parking.UnitPrice);
+                                    if (config != null)
+                                        parking.ConfigId = config.ConfigId;
+                                    parking.MonthCount = int.Parse(dr[4].ToString());
+                                    parking.Amount = decimal.Parse(dr[5].ToString());
+                                    parking.CreateTime = DateTime.Now;
+                                    DateTime PayTime = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[6].ToString(), out PayTime))
+                                        parking.PayTime = PayTime;
+                                    DateTime StartDate = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[7].ToString(), out StartDate))
+                                        parking.StartDate = StartDate;
+                                    DateTime EndDate = DateTime.MinValue;
+                                    if (DateTime.TryParse(dr[8].ToString(), out EndDate))
+                                        parking.EndDate = EndDate;
+                                    parking.ReceiptNo = dr[9].ToString();
+                                    parking.VoucherNo = dr[10].ToString();
+                                    parking.OprationName = dr[11].ToString();
+                                    parking.PayWay = dr[12].ToString();
+                                    parking.Remark = dr[13].ToString();
+                                    if (parking.PayTime != null)
+                                        parking.Status = 1;
+                                    if (db.Parkings.Count(w => w.CarId == car.CarId && w.Amount == parking.Amount && w.MonthCount == parking.MonthCount && w.StartDate == parking.StartDate && w.EndDate == parking.EndDate) == 0)
+                                    {
+                                        db.Parkings.Add(parking);
+                                        db.SaveChanges();
+                                        dr[14] = "成功";
+                                        dr[15] = "新增";
+                                    }
+                                    else
+                                    {
+                                        Parking newParking = db.Parkings.First(w => w.CarId == car.CarId && w.Amount == parking.Amount && w.MonthCount == parking.MonthCount && w.StartDate == parking.StartDate && w.EndDate == parking.EndDate);
+                                        Ricky.ObjectCopy.Copy<Parking>(parking, newParking, new string[] { "ParkingId", "PayerName", "UserId" });
+                                        db.SaveChanges();
+                                        dr[14] = "成功";
+                                        dr[15] = "修改";
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    dr[14] = "失败";
+                                    dr[15] = e.Message;
+                                }
+                            }
+                            else
+                            {
+                                dr[14] = "失败";
+                                dr[15] = "没有找到业主";
+                            }
+                        }
+                        else
+                        {
+                            dr[14] = "失败";
+                            dr[15] = "沒有找到此房产";
+                        }
+                    }
+                    else
+                    {
+                        dr[14] = "失败";
+                        dr[15] = "沒有找到此小区";
+                    }
+                }
+                else
+                {
+                    dr[14] = "失败";
+                    dr[15] = "缺少所属小区名称";
+                }
+            }
+            db.Database.ExecuteSqlCommand("update OwnerCar set ParkingExpireDate=t.EndDate from (select CarId,MAX(EndDate) EndDate from Parking group by CarId)t where OwnerCar.CarId=t.CarId");
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/parking");
+            if (!Directory.Exists(fileSaveLocation))
+                Directory.CreateDirectory(fileSaveLocation);
+            string Name = fileName.Substring(0, fileName.LastIndexOf('.'));
+            Excel excel = new Excel(dt);
+            string saveFileName = string.Format("{1}{2}.xlsx", fileSaveLocation, Name, DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+            excel.Save(fileSaveLocation + "\\" + saveFileName);
+            return Request.CreateResponse(HttpStatusCode.OK, new { Status = 1, filename = saveFileName });
+        }
+        [HttpGet]
+        [Author("parking.import")]
+        public HttpResponseMessage ImportFile([FromUri]string filename)
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/parking");
+            var filePath = fileSaveLocation + "\\" + filename;
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode(filename)
+                };
+                return response;
+            }
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using CitySouth.Data;
 using CitySouth.Data.Models;
 using Newtonsoft.Json;
+using Ricky;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -286,42 +288,114 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpPost]
-        [AllowAnonymous]
-        public async Task<HttpResponseMessage> import()
+        [Author("owner.import")]
+        public async Task<HttpResponseMessage> Import()
         {
-            // Check whether the POST operation is MultiPart?
             if (!Request.Content.IsMimeMultipartContent())
             {
                 throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
             }
-            // Prepare CustomMultipartFormDataStreamProvider in which our multipart form
-            // data will be loaded.
+            MultipartMemoryStreamProvider provider = await Request.Content.ReadAsMultipartAsync();
+            HttpContent content = provider.Contents.First();
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = content.Headers.ContentDisposition.FileName.Trim('"');
+            DataTable dt = Excel.ExcelToDataTable(fileName, stream);
+            dt.Columns.Add("导入状态");
+            dt.Columns.Add("导入备注");
+            foreach (DataRow dr in dt.Rows)
+            {
+                string EstateName = dr[0].ToString();
+                if (!string.IsNullOrEmpty(EstateName))
+                {
+                    Estate estate = db.Estates.FirstOrDefault(w => w.EstateName == EstateName);
+                    if (estate != null)
+                    {
+                        string HouseNo = dr[1].ToString();
+                        House house = db.Houses.FirstOrDefault(w => w.EstateId == estate.EstateId && w.HouseNo == HouseNo);
+                        if (house != null)
+                        {
+                            try
+                            {
+                                Owner owner = new Owner();
+                                owner.HouseId = house.HouseId;
+                                owner.OwnerName = dr[2].ToString();
+                                owner.CheckInName = dr[3].ToString();
+                                owner.CardId = dr[4].ToString();
+                                owner.Phone = dr[5].ToString();
+                                owner.Occupation = dr[6].ToString();
+                                DateTime PropertyStartDate = DateTime.MinValue;
+                                if (DateTime.TryParse(dr[7].ToString(), out PropertyStartDate))
+                                    owner.PropertyStartDate = PropertyStartDate;
+                                DateTime PropertyExpireDate = DateTime.MinValue;
+                                if (DateTime.TryParse(dr[8].ToString(), out PropertyExpireDate))
+                                    owner.PropertyExpireDate = PropertyExpireDate;
+                                DateTime HandDate = DateTime.MinValue;
+                                if (DateTime.TryParse(dr[9].ToString(), out HandDate))
+                                    owner.HandDate = HandDate;
+                                DateTime RenovationDate = DateTime.MinValue;
+                                if (DateTime.TryParse(dr[10].ToString(), out RenovationDate))
+                                    owner.RenovationDate = RenovationDate;
+                                DateTime CheckInDate = DateTime.MinValue;
+                                if (DateTime.TryParse(dr[11].ToString(), out CheckInDate))
+                                    owner.CheckInDate = CheckInDate;
+                                owner.UseInfo = dr[12].ToString();
+                                owner.Remark = dr[13].ToString();
+                                if (db.Owners.Count(w => w.HouseId == owner.HouseId) == 0)
+                                {
+                                    db.Owners.Add(owner);
+                                    db.SaveChanges();
+                                    dr[14] = "成功";
+                                    dr[15] = "新增";
+                                }
+                                else
+                                {
+                                    Owner newOwner = db.Owners.First(w => w.HouseId == owner.HouseId);
+                                    Ricky.ObjectCopy.Copy<Owner>(owner, newOwner, new string[] { "OwnerId", "CheckInType" });
+                                    db.SaveChanges();
+                                    dr[14] = "成功";
+                                    dr[15] = "修改";
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                dr[14] = "失败";
+                                dr[15] = e.Message;
+                            }
+                        }
+                        else
+                        {
+                            dr[14] = "失败";
+                            dr[15] = "沒有找到此房产";
+                        }
+                    }
+                    else
+                    {
+                        dr[14] = "失败";
+                        dr[15] = "沒有找到此小区";
+                    }
+                }
+                else
+                {
+                    dr[14] = "失败";
+                    dr[15] = "缺少所属小区名称";
+                }
+            }
+            db.Database.ExecuteSqlCommand("update House set IsHasOwner=1 where IsHasOwner=0 and HouseId in(select HouseId from [Owner])");
             string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
             if (!Directory.Exists(fileSaveLocation))
                 Directory.CreateDirectory(fileSaveLocation);
-            CustomMultipartFormDataStreamProvider provider = new CustomMultipartFormDataStreamProvider(fileSaveLocation);
-            List<string> files = new List<string>();
-            try
-            {
-                foreach (MultipartFileData file in provider.FileData)
-                {
-                    files.Add(Path.GetFileName(file.LocalFileName));
-                }
-                await Request.Content.ReadAsMultipartAsync(provider);
-                // Send OK Response along with saved file names to the client.
-                return Request.CreateResponse(HttpStatusCode.OK, files);
-            }
-            catch (System.Exception e)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
-            }
+            string Name = fileName.Substring(0, fileName.LastIndexOf('.'));
+            Excel excel = new Excel(dt);
+            string saveFileName = string.Format("{1}{2}.xlsx", fileSaveLocation, Name, DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+            excel.Save(fileSaveLocation + "\\" + saveFileName);
+            return Request.CreateResponse(HttpStatusCode.OK, new { Status = 1, filename = saveFileName });
         }
-        [AllowAnonymous]
         [HttpGet]
-        public HttpResponseMessage output()
+        [Author("owner.import")]
+        public HttpResponseMessage ImportFile([FromUri]string filename)
         {
-            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload");
-            var filePath = fileSaveLocation + "\\2352885_m.jpg";
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
+            var filePath = fileSaveLocation + "\\" + filename;
             if (File.Exists(filePath))
             {
                 HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -329,11 +403,11 @@ namespace CitySouth.Web.Controllers
                 response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
                 {
-                    FileName = "2352885_m.jpg"
+                    FileName = HttpUtility.UrlEncode(filename)
                 };
                 return response;
             }
-            return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }

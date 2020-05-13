@@ -23,17 +23,20 @@ namespace Ricky
         }
         public static DataTable ExcelToDataTable(string fileName)
         {
+            return ExcelToDataTable(fileName, new FileStream(fileName, FileMode.Open, FileAccess.Read));
+        }
+        public static DataTable ExcelToDataTable(string fileName, Stream stream)
+        {
             ISheet sheet = null;
             DataTable data = new DataTable();
             int startRow = 0;
             try
             {
-                FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
                 IWorkbook workbook = null;
                 if (fileName.EndsWith(".xlsx"))
-                    workbook = new XSSFWorkbook(fs);
+                    workbook = new XSSFWorkbook(stream);
                 else
-                    workbook = new HSSFWorkbook(fs);
+                    workbook = new HSSFWorkbook(stream);
                 sheet = workbook.GetSheetAt(0);
                 if (sheet != null)
                 {
@@ -63,13 +66,27 @@ namespace Ricky
                     {
                         IRow row = sheet.GetRow(i);
                         if (row == null) continue; //没有数据的行默认是null　　　　　　　
-
                         DataRow dataRow = data.NewRow();
                         for (int j = row.FirstCellNum; j < cellCount; ++j)
                         {
                             ICell cell = row.GetCell(j);
                             if (cell != null) //同理，没有数据的单元格都默认是null
-                                dataRow[j] = cell.ToString();
+                            {
+                                if (cell.CellType == CellType.Formula)
+                                {
+                                    cell.SetCellType(CellType.String);
+                                    dataRow[j] = cell.StringCellValue;
+                                }
+                                else if(cell.CellType == CellType.Numeric && DateUtil.IsCellDateFormatted(cell))
+                                {
+                                    dataRow[j] = cell.DateCellValue;
+                                }
+                                else
+                                {
+                                    dataRow[j] = cell.ToString(); 
+                                }
+
+                            }
                         }
                         data.Rows.Add(dataRow);
                     }

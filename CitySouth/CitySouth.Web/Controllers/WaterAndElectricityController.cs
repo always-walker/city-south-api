@@ -6,6 +6,12 @@ using System.Net.Http;
 using System.Web.Http;
 using CitySouth.Data;
 using CitySouth.Data.Models;
+using System.Web;
+using System.IO;
+using System.Net.Http.Headers;
+using Ricky;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace CitySouth.Web.Controllers
 {
@@ -162,6 +168,146 @@ namespace CitySouth.Web.Controllers
                 result["LastQuantity"] = null;
             }
             return result;
+        }
+        [HttpPost]
+        [Author("water-electricity.import")]
+        public async Task<HttpResponseMessage> Import()
+        {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+            MultipartMemoryStreamProvider provider = await Request.Content.ReadAsMultipartAsync();
+            HttpContent content = provider.Contents.First();
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = content.Headers.ContentDisposition.FileName.Trim('"');
+            DataTable dt = Excel.ExcelToDataTable(fileName, stream);
+            dt.Columns.Add("导入状态");
+            dt.Columns.Add("导入备注");
+            foreach (DataRow dr in dt.Rows)
+            {
+                string EstateName = dr[0].ToString();
+                if (!string.IsNullOrEmpty(EstateName))
+                {
+                    Estate estate = db.Estates.FirstOrDefault(w => w.EstateName == EstateName);
+                    if (estate != null)
+                    {
+                        string HouseNo = dr[1].ToString();
+                        House house = db.Houses.FirstOrDefault(w => w.EstateId == estate.EstateId && w.HouseNo == HouseNo);
+                        if (house != null)
+                        {
+                            Owner owner = db.Owners.FirstOrDefault(w => w.HouseId == house.HouseId);
+                            if (owner != null)
+                            {
+                                try
+                                {
+                                    WaterAndElectricity waterE = new WaterAndElectricity();
+                                    waterE.OwnerId = owner.OwnerId;
+                                    waterE.PayerName = owner.CheckInName;
+                                    waterE.UnitPrice = decimal.Parse(dr[5].ToString());
+                                    waterE.FeeName = dr[2].ToString();
+                                    waterE.FeeType = waterE.FeeName.Equals("水费") ? "water" : waterE.FeeName.Equals("电费") ? "electricity" : "";
+                                    if (!string.IsNullOrEmpty(waterE.FeeType))
+                                    {
+                                        CostConfig config = db.CostConfigs.FirstOrDefault(w => w.EstateId == estate.EstateId && w.ConfigType == waterE.FeeType && w.UnitPrice == waterE.UnitPrice);
+                                        if (config != null)
+                                            waterE.ConfigId = config.ConfigId;
+                                        waterE.CreateTime = DateTime.Now;
+                                        DateTime PayTime = DateTime.MinValue;
+                                        if (DateTime.TryParse(dr[3].ToString(), out PayTime))
+                                            waterE.PayTime = PayTime;
+                                        DateTime FeeDate = DateTime.MinValue;
+                                        if (DateTime.TryParse(dr[4].ToString(), out PayTime))
+                                            waterE.FeeDate = PayTime;
+                                        waterE.UnitName = dr[6].ToString();
+                                        waterE.LastQuantity = double.Parse(dr[7].ToString());
+                                        waterE.Quantity = double.Parse(dr[8].ToString());
+                                        waterE.Amount = decimal.Parse(dr[9].ToString());
+                                        waterE.ReceiptNo = dr[10].ToString();
+                                        waterE.VoucherNo = dr[11].ToString();
+                                        waterE.OprationName = dr[12].ToString();
+                                        waterE.PayWay = dr[13].ToString();
+                                        waterE.Remark = dr[14].ToString();
+                                        waterE.Status = dr[15].ToString().Equals("是") ? 1 : 0;
+                                        if (db.WaterAndElectricities.Count(w => w.OwnerId == owner.OwnerId && w.LastQuantity == waterE.LastQuantity && w.Quantity == waterE.Quantity && w.FeeDate == waterE.FeeDate) == 0)
+                                        {
+                                            db.WaterAndElectricities.Add(waterE);
+                                            db.SaveChanges();
+                                            dr[16] = "成功";
+                                            dr[17] = "新增";
+                                        }
+                                        else
+                                        {
+                                            WaterAndElectricity newWateE = db.WaterAndElectricities.First(w => w.OwnerId == owner.OwnerId && w.LastQuantity == waterE.LastQuantity && w.Quantity == waterE.Quantity && w.FeeDate == waterE.FeeDate);
+                                            Ricky.ObjectCopy.Copy<WaterAndElectricity>(waterE, newWateE, new string[] { "FeeId", "PayerName", "UserId" });
+                                            db.SaveChanges();
+                                            dr[16] = "成功";
+                                            dr[17] = "修改";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        dr[16] = "失败";
+                                        dr[17] = "无法识别费用类型";
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    dr[16] = "失败";
+                                    dr[17] = e.Message;
+                                }
+                            }
+                            else
+                            {
+                                dr[16] = "失败";
+                                dr[17] = "没有找到业主";
+                            }
+                        }
+                        else
+                        {
+                            dr[16] = "失败";
+                            dr[17] = "沒有找到此房产";
+                        }
+                    }
+                    else
+                    {
+                        dr[16] = "失败";
+                        dr[17] = "沒有找到此小区";
+                    }
+                }
+                else
+                {
+                    dr[16] = "失败";
+                    dr[17] = "缺少所属小区名称";
+                }
+            }
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/water-electricity");
+            if (!Directory.Exists(fileSaveLocation))
+                Directory.CreateDirectory(fileSaveLocation);
+            string Name = fileName.Substring(0, fileName.LastIndexOf('.'));
+            Excel excel = new Excel(dt);
+            string saveFileName = string.Format("{1}{2}.xlsx", fileSaveLocation, Name, DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+            excel.Save(fileSaveLocation + "\\" + saveFileName);
+            return Request.CreateResponse(HttpStatusCode.OK, new { Status = 1, filename = saveFileName });
+        }
+        [HttpGet]
+        [Author("water-electricity.import")]
+        public HttpResponseMessage ImportFile([FromUri]string filename)
+        {
+            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/water-electricity");
+            var filePath = fileSaveLocation + "\\" + filename;
+            if (File.Exists(filePath))
+            {
+                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode(filename)
+                };
+                return response;
+            }
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
     }
 }
