@@ -11,7 +11,9 @@ namespace CitySouth.Data.Models
         public string PayerName { get; set; }
         public Nullable<int> ConfigId { get; set; }
         public decimal UnitPrice { get; set; }
+        public bool IsDeposit { get; set; }
         public decimal Amount { get; set; }
+        public decimal LeftAmount { get; set; }
         public System.DateTime CreateTime { get; set; }
         public Nullable<System.DateTime> PayTime { get; set; }
         public Nullable<System.DateTime> StartDate { get; set; }

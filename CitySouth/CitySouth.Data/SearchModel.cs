@@ -16,6 +16,7 @@ namespace CitySouth.Data
         public int PageSize { get; set; }
         public int PageIndex { get; set; }
         public int? FkId { get; set; }
+        public string FkIds { get; set; }
         public int? Fk2Id { get; set; }
         public int? Fk3Id { get; set; }
         public string KeyWord { get; set; }

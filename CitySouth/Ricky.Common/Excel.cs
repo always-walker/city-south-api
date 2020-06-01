@@ -106,12 +106,13 @@ namespace Ricky
             file.Close();
             xssfworkbook.Close();
         }
-        public MemoryStream ToStream()
+        public byte[] ToStream()
         {
             MemoryStream ms = new MemoryStream();
             xssfworkbook.Write(ms);
+            byte[] stream = ms.ToArray();
             xssfworkbook.Close();
-            return ms;
+            return stream;
         }
         private void FillExcel() {
             ICell cell;

@@ -196,7 +196,7 @@ namespace CitySouth.Web.Controllers
                                     CostConfig config = db.CostConfigs.FirstOrDefault(w => w.EstateId == estate.EstateId && w.ConfigType == "parking" && w.UnitPrice == parking.UnitPrice);
                                     if (config != null)
                                         parking.ConfigId = config.ConfigId;
-                                    parking.MonthCount = int.Parse(dr[4].ToString());
+                                    parking.MonthCount = double.Parse(dr[4].ToString());
                                     parking.Amount = decimal.Parse(dr[5].ToString());
                                     parking.CreateTime = DateTime.Now;
                                     DateTime PayTime = DateTime.MinValue;
@@ -289,6 +289,82 @@ namespace CitySouth.Web.Controllers
                 return response;
             }
             return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+        }
+        [HttpPost]
+        [Author("parking.export")]
+        public HttpResponseMessage Export([FromBody]SearchModel model)
+        {
+            var a = from parking in db.Parkings
+                    join car in db.OwnerCars on parking.CarId equals car.CarId
+                    join b in db.Owners on car.OwnerId equals b.OwnerId
+                    join c in db.Houses on b.HouseId equals c.HouseId
+                    join d in db.Estates on c.EstateId equals d.EstateId
+                    select new
+                    {
+                        d.EstateName,
+                        c.EstateId,
+                        c.HouseId,
+                        c.HouseNo,
+                        b.OwnerId,
+                        b.OwnerName,
+                        b.CheckInName,
+                        b.Phone,
+                        car.ParkingExpireDate,
+                        car.CarNumber,
+                        car.Brand,
+                        car.Model,
+                        parking
+                    };
+            if (model.FkId != null && model.FkId > 0)
+                a = a.Where(w => w.EstateId == model.FkId);
+            else if (!user.IsSuper)
+                a = a.Where(w => user.EstateIds.Contains(w.EstateId));
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.OwnerName.Contains(model.KeyWord) || w.CheckInName.Contains(model.KeyWord) || w.Phone.Contains(model.KeyWord) || w.parking.VoucherNo.Contains(model.KeyWord) || w.parking.ReceiptNo.Contains(model.KeyWord) || w.parking.Remark.Contains(model.KeyWord));
+            if (model.StartDate != null)
+                a = a.Where(w => w.parking.CreateTime >= model.StartDate.Value);
+            if (model.EndDate != null)
+            {
+                model.EndDate = model.EndDate.Value.AddDays(1);
+                a = a.Where(w => w.parking.CreateTime < model.EndDate.Value);
+            }
+            var list = from b in a
+                       select new
+                       {
+                           项目名称 = b.EstateName,
+                           房号 = b.HouseNo,
+                           业主姓名 = b.OwnerName,
+                           缴费人姓名 = b.parking.PayerName,
+                           联系电话 = b.Phone,
+                           车牌号 = b.CarNumber,
+                           品牌 = b.Brand,
+                           型号 = b.Model,
+                           停车费到期日 = b.ParkingExpireDate,
+                           单价 = b.parking.UnitPrice,
+                           缴费月数 = b.parking.MonthCount,
+                           缴费金额 = b.parking.Amount,
+                           缴费时间 = b.parking.CreateTime,
+                           支付时间 = b.parking.PayTime,
+                           服务开始时间 = b.parking.StartDate,
+                           服务结束时间 = b.parking.EndDate,
+                           收据号码 = b.parking.ReceiptNo,
+                           凭证号码 = b.parking.VoucherNo,
+                           操作员 = b.parking.OprationName,
+                           缴费方式 = b.parking.PayWay,
+                           备注 = b.parking.Remark
+                       };
+            DataTable dt = Common.ToDataTable(list.ToList());
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            Excel excel = new Excel(dt);
+            byte[] steam = excel.ToStream();
+            MemoryStream ms = new MemoryStream(steam);
+            response.Content = new StreamContent(ms);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = HttpUtility.UrlEncode("停车费.xlsx")
+            };
+            return response;
         }
     }
 }

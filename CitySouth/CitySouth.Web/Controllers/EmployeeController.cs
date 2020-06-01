@@ -49,6 +49,25 @@ namespace CitySouth.Web.Controllers
             result["datalist"] = list;
             return result;
         }
+        [HttpPost]
+        public Dictionary<string, object> Select([FromBody]SearchModel model)
+        {
+            var a = from b in db.Employees
+                    select new
+                    {
+                        b.EmployeeId,
+                        b.EmployeeName,
+                        b.EmployeeNo,
+                        b.EstateId,
+                        b.PostId,
+                        b.Phone
+                    };
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.EmployeeName.Contains(model.KeyWord) || w.Phone.Contains(model.KeyWord) || w.EmployeeNo.Contains(model.KeyWord));
+            var list = a.OrderBy(w => w.EmployeeNo).Take(10).ToList();
+            result["datalist"] = list;
+            return result;
+        }
         [HttpGet]
         [Author("employee.manage")]
         public Dictionary<string, object> PostHistory(int id)

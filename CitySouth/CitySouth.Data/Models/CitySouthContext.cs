@@ -16,6 +16,7 @@ namespace CitySouth.Data.Models
         {
         }
 
+        public DbSet<ApplyLeave> ApplyLeaves { get; set; }
         public DbSet<Article> Articles { get; set; }
         public DbSet<CostConfig> CostConfigs { get; set; }
         public DbSet<ElseCost> ElseCosts { get; set; }
@@ -34,6 +35,7 @@ namespace CitySouth.Data.Models
         public DbSet<Owner> Owners { get; set; }
         public DbSet<OwnerCar> OwnerCars { get; set; }
         public DbSet<OwnerFamily> OwnerFamilies { get; set; }
+        public DbSet<OwnerPropertyExpireLog> OwnerPropertyExpireLogs { get; set; }
         public DbSet<Parking> Parkings { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Property> Properties { get; set; }
@@ -52,6 +54,7 @@ namespace CitySouth.Data.Models
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            modelBuilder.Configurations.Add(new ApplyLeaveMap());
             modelBuilder.Configurations.Add(new ArticleMap());
             modelBuilder.Configurations.Add(new CostConfigMap());
             modelBuilder.Configurations.Add(new ElseCostMap());
@@ -70,6 +73,7 @@ namespace CitySouth.Data.Models
             modelBuilder.Configurations.Add(new OwnerMap());
             modelBuilder.Configurations.Add(new OwnerCarMap());
             modelBuilder.Configurations.Add(new OwnerFamilyMap());
+            modelBuilder.Configurations.Add(new OwnerPropertyExpireLogMap());
             modelBuilder.Configurations.Add(new ParkingMap());
             modelBuilder.Configurations.Add(new PostMap());
             modelBuilder.Configurations.Add(new PropertyMap());

@@ -6,7 +6,8 @@ namespace CitySouth.Data.Models
     public partial class Article
     {
         public int ArticleId { get; set; }
-        public int CategoryName { get; set; }
+        public string CategoryName { get; set; }
+        public string EstateIds { get; set; }
         public string Title { get; set; }
         public string GoUrl { get; set; }
         public string Content { get; set; }

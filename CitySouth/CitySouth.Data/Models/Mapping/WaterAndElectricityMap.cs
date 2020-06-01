@@ -53,6 +53,7 @@ namespace CitySouth.Data.Models.Mapping
             this.Property(t => t.UnitName).HasColumnName("UnitName");
             this.Property(t => t.LastQuantity).HasColumnName("LastQuantity");
             this.Property(t => t.Quantity).HasColumnName("Quantity");
+            this.Property(t => t.ShareQuantity).HasColumnName("ShareQuantity");
             this.Property(t => t.Amount).HasColumnName("Amount");
             this.Property(t => t.ReceiptNo).HasColumnName("ReceiptNo");
             this.Property(t => t.VoucherNo).HasColumnName("VoucherNo");

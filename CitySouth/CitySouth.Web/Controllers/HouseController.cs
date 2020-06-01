@@ -325,24 +325,62 @@ namespace CitySouth.Web.Controllers
             }
             return ControllerContext.Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
-        [AllowAnonymous]
-        [HttpGet]
-        public HttpResponseMessage output()
+        [HttpPost]
+        [Author("house.export")]
+        public HttpResponseMessage Export([FromBody]SearchModel model)
         {
-            string fileSaveLocation = HttpContext.Current.Server.MapPath("~/upload/owner");
-            var filePath = fileSaveLocation + "\\-56665109_出题概要.jpg";
-            if (File.Exists(filePath))
+            var a = from b in db.Houses select b;
+            if (model.FkId != null && model.FkId > 0)
+                a = a.Where(w => w.EstateId == model.FkId);
+            else if (!user.IsSuper)
+                a = a.Where(w => user.EstateIds.Contains(w.EstateId));
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.Structure.Contains(model.KeyWord) || w.Model.Contains(model.KeyWord) || w.HouseType.Contains(model.KeyWord) || w.ContactTel.Contains(model.KeyWord));
+            if (model.IsCondition1 != null)
+                a = a.Where(w => w.IsPlace == model.IsCondition1.Value);
+            if (model.StartDate != null)
+                a = a.Where(w => w.HandDate >= model.StartDate.Value);
+            if (model.EndDate != null)
             {
-                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
-                response.Content = new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read));
-                response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
-                    FileName = HttpUtility.UrlEncode("出题概要.jpg")
-                };
-                return response;
+                model.EndDate = model.EndDate.Value.AddDays(1);
+                a = a.Where(w => w.HandDate < model.EndDate.Value);
             }
-            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+            var house = a.OrderBy(w => w.EstateId).ThenBy(w => w.Building).ThenBy(w => w.Unit).ThenBy(w => w.Floor).ThenBy(w => w.No).ToList();
+            var estate = db.Estates.ToList();
+            var list = from x in house
+                       join y in estate on x.EstateId equals y.EstateId
+                       select new
+                       {
+                           小区名称 = y.EstateName,
+                           房屋类型 = x.HouseType,
+                           栋 = x.Building,
+                           单元 = x.Unit,
+                           层 = x.Floor,
+                           号 = x.No,
+                           房号 = x.HouseNo,
+                           户型 = x.Model,
+                           结构 = x.Structure,
+                           建筑面积 = x.Floorage,
+                           联系电话 = x.ContactTel,
+                           其它电话 = x.ElseTel,
+                           房屋动态 = x.News,
+                           是否安置 = x.IsPlace ? "是" : "否",
+                           接房日期 = x.HandDate,
+                           空置状态 = x.EmptyState ? "是" : "否",
+                           备注 = x.Remark
+                       };
+            DataTable dt = Common.ToDataTable(list.ToList());
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            Excel excel = new Excel(dt);
+            byte[] steam = excel.ToStream();
+            MemoryStream ms = new MemoryStream(steam);
+            response.Content = new StreamContent(ms);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = HttpUtility.UrlEncode("房产.xlsx")
+            };
+            return response;
         }
     }
 }

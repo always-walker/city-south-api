@@ -74,6 +74,8 @@ namespace CitySouth.Web.Controllers
             }
             else
             {
+                if (elseCost.IsDeposit)
+                    elseCost.LeftAmount = elseCost.Amount;
                 elseCost.UserId = user.UserId;
                 elseCost.OprationName = user.UserName;
                 elseCost.CreateTime = Ricky.Common.NowDate;
@@ -104,6 +106,7 @@ namespace CitySouth.Web.Controllers
                 if (newElseCost.Status == 0)
                 {
                     newElseCost.CostName = elseCost.CostName;
+                    newElseCost.IsDeposit = elseCost.IsDeposit;
                     newElseCost.StartDate = elseCost.StartDate;
                     newElseCost.EndDate = elseCost.EndDate;
                     newElseCost.UnitPrice = elseCost.UnitPrice;
@@ -282,6 +285,72 @@ namespace CitySouth.Web.Controllers
                 return response;
             }
             return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+        }
+        [HttpPost]
+        [Author("else-cost.export")]
+        public HttpResponseMessage Export([FromBody]SearchModel model)
+        {
+            var a = from elseCost in db.ElseCosts
+                    join b in db.Owners on elseCost.OwnerId equals b.OwnerId
+                    join c in db.Houses on b.HouseId equals c.HouseId
+                    join d in db.Estates on c.EstateId equals d.EstateId
+                    select new
+                    {
+                        d.EstateName,
+                        c.EstateId,
+                        c.HouseNo,
+                        b.OwnerName,
+                        b.CheckInName,
+                        b.Phone,
+                        elseCost
+                    };
+            if (model.FkId != null && model.FkId > 0)
+                a = a.Where(w => w.EstateId == model.FkId);
+            else if (!user.IsSuper)
+                a = a.Where(w => user.EstateIds.Contains(w.EstateId));
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.OwnerName.Contains(model.KeyWord) || w.CheckInName.Contains(model.KeyWord) || w.Phone.Contains(model.KeyWord) || w.elseCost.VoucherNo.Contains(model.KeyWord) || w.elseCost.ReceiptNo.Contains(model.KeyWord) || w.elseCost.Remark.Contains(model.KeyWord));
+            if (!string.IsNullOrEmpty(model.type))
+                a = a.Where(w => w.elseCost.CostName == model.type);
+            if (model.StartDate != null)
+                a = a.Where(w => w.elseCost.CreateTime >= model.StartDate.Value);
+            if (model.EndDate != null)
+            {
+                model.EndDate = model.EndDate.Value.AddDays(1);
+                a = a.Where(w => w.elseCost.CreateTime < model.EndDate.Value);
+            }
+            var list = from b in a
+                       select new
+                       {
+                           项目名称 = b.EstateName,
+                           房号 = b.HouseNo,
+                           业主姓名 = b.OwnerName,
+                           缴费人姓名 = b.elseCost.PayerName,
+                           联系电话 = b.Phone,
+                           费用类别 = b.elseCost.CostName,
+                           缴费金额 = b.elseCost.Amount,
+                           缴费时间 = b.elseCost.CreateTime,
+                           支付时间 = b.elseCost.PayTime,
+                           服务开始时间 = b.elseCost.StartDate,
+                           服务结束时间 = b.elseCost.EndDate,
+                           收据号码 = b.elseCost.ReceiptNo,
+                           凭证号码 = b.elseCost.VoucherNo,
+                           操作员 = b.elseCost.OprationName,
+                           缴费方式 = b.elseCost.PayWay,
+                           备注 = b.elseCost.Remark
+                       };
+            DataTable dt = Common.ToDataTable(list.ToList());
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            Excel excel = new Excel(dt);
+            byte[] steam = excel.ToStream();
+            MemoryStream ms = new MemoryStream(steam);
+            response.Content = new StreamContent(ms);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = HttpUtility.UrlEncode("其它费用.xlsx")
+            };
+            return response;
         }
     }
 }

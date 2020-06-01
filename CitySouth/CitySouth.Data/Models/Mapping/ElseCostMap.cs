@@ -41,7 +41,9 @@ namespace CitySouth.Data.Models.Mapping
             this.Property(t => t.PayerName).HasColumnName("PayerName");
             this.Property(t => t.ConfigId).HasColumnName("ConfigId");
             this.Property(t => t.UnitPrice).HasColumnName("UnitPrice");
+            this.Property(t => t.IsDeposit).HasColumnName("IsDeposit");
             this.Property(t => t.Amount).HasColumnName("Amount");
+            this.Property(t => t.LeftAmount).HasColumnName("LeftAmount");
             this.Property(t => t.CreateTime).HasColumnName("CreateTime");
             this.Property(t => t.PayTime).HasColumnName("PayTime");
             this.Property(t => t.StartDate).HasColumnName("StartDate");

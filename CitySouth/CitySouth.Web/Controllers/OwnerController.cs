@@ -44,6 +44,11 @@ namespace CitySouth.Web.Controllers
                 a = a.Where(w => user.EstateIds.Contains(w.EstateId));
             if (!string.IsNullOrEmpty(model.KeyWord))
                 a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.Model.Contains(model.KeyWord) || w.owner.OwnerName.Contains(model.KeyWord) || w.owner.Phone.Contains(model.KeyWord) || w.owner.Remark.Contains(model.KeyWord));
+            if (model.SearchDate != null)
+            {
+                model.SearchDate = model.SearchDate.Value.Date.AddDays(1);
+                a = a.Where(w => w.owner.PropertyExpireDate < model.SearchDate.Value);
+            }
             if (model.StartDate != null)
                 a = a.Where(w => w.owner.HandDate >= model.StartDate.Value);
             if (model.EndDate != null)
@@ -118,6 +123,13 @@ namespace CitySouth.Web.Controllers
             result["datalist"] = list;
             return result;
         }
+        [HttpGet]
+        [Author("owner.list")]
+        public Dictionary<string, object> expireLog(int id)
+        {
+            result["datalist"] = db.OwnerPropertyExpireLogs.Where(w => w.OwnerId == id).OrderByDescending(w => w.CreateTime).ToList();
+            return result;
+        }
         [HttpPost]
         [Author("owner.add")]
         public Dictionary<string, object> Add([FromBody]Owner owner)
@@ -178,10 +190,23 @@ namespace CitySouth.Web.Controllers
             else
             {
                 Owner newOwner = db.Owners.FirstOrDefault(w => w.OwnerId == owner.OwnerId);
+                if ((newOwner.PropertyExpireDate == null && owner.PropertyExpireDate != null) || (newOwner.PropertyExpireDate != null && owner.PropertyExpireDate == null)
+            || !(newOwner.PropertyExpireDate.Value.ToString("yyyyMMdd").Equals(owner.PropertyExpireDate.Value.ToString("yyyyMMdd"))))
+                {
+                    OwnerPropertyExpireLog log = new OwnerPropertyExpireLog();
+                    log.UserId = user.UserId;
+                    log.UserName = user.UserName;
+                    log.OwnerId = newOwner.OwnerId;
+                    log.ExpireDate = newOwner.PropertyExpireDate;
+                    log.ModifyDate = owner.PropertyExpireDate;
+                    log.Remark = owner.ExpireModifyRemark;
+                    log.CreateTime = Common.NowDate;
+                    db.OwnerPropertyExpireLogs.Add(log);
+                }
                 Ricky.ObjectCopy.Copy<Owner>(owner, newOwner, new string[] { "HouseId" });
                 if (newOwner.PropertyExpireDate == null)
                     newOwner.PropertyExpireDate = newOwner.PropertyStartDate;
-                //更新家庭信息和房产信息
+                #region 更新家庭信息和房产信息
                 if (owner.FamilyList != null && owner.FamilyList.Count > 0)
                 {
                     foreach (OwnerFamily familyItem in owner.FamilyList)
@@ -216,6 +241,7 @@ namespace CitySouth.Web.Controllers
                     }
                     db.SaveChanges();
                 }
+                #endregion
                 db.SaveChanges();
             }
             result["message"] = message;
@@ -408,6 +434,77 @@ namespace CitySouth.Web.Controllers
                 return response;
             }
             return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
+        }
+        [HttpPost]
+        [Author("owner.export")]
+        public HttpResponseMessage Export([FromBody]SearchModel model)
+        {
+            var a = from b in db.Owners
+                    join c in db.Houses on b.HouseId equals c.HouseId
+                    join d in db.Estates on c.EstateId equals d.EstateId
+                    select new
+                    {
+                        d.EstateName,
+                        c.EstateId,
+                        c.Building,
+                        c.Unit,
+                        c.Floor,
+                        c.No,
+                        c.HouseNo,
+                        c.Model,
+                        c.Floorage,
+                        owner = b
+                    };
+            if (model.FkId != null && model.FkId > 0)
+                a = a.Where(w => w.EstateId == model.FkId);
+            else if (!user.IsSuper)
+                a = a.Where(w => user.EstateIds.Contains(w.EstateId));
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.Model.Contains(model.KeyWord) || w.owner.OwnerName.Contains(model.KeyWord) || w.owner.Phone.Contains(model.KeyWord) || w.owner.Remark.Contains(model.KeyWord));
+            if (model.SearchDate != null)
+            {
+                model.SearchDate = model.SearchDate.Value.Date.AddDays(1);
+                a = a.Where(w => w.owner.PropertyExpireDate < model.SearchDate.Value);
+            }
+            if (model.StartDate != null)
+                a = a.Where(w => w.owner.HandDate >= model.StartDate.Value);
+            if (model.EndDate != null)
+            {
+                model.EndDate = model.EndDate.Value.AddDays(1);
+                a = a.Where(w => w.owner.HandDate < model.EndDate.Value);
+            }
+            var list = from b in a
+                       select new
+                       {
+                           项目名称 = b.EstateName,
+                           房号 = b.HouseNo,
+                           户型 = b.Model,
+                           建筑面积 = b.Floorage,
+                           业主姓名 = b.owner.OwnerName,
+                           常住人姓名 = b.owner.CheckInName,
+                           联系电话 = b.owner.Phone,
+                           身份证号 = b.owner.CardId,
+                           单位职业 = b.owner.Occupation,
+                           交房日期 = b.owner.HandDate,
+                           装修日期 = b.owner.RenovationDate,
+                           入住日期 =b.owner.CheckInDate,
+                           物业起始日 = b.owner.PropertyStartDate,
+                           物业到期日 = b.owner.PropertyExpireDate,
+                           使用信息 = b.owner.UseInfo,
+                           备注 = b.owner.Remark
+                       };
+            DataTable dt = Common.ToDataTable(list.ToList());
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            Excel excel = new Excel(dt);
+            byte[] steam = excel.ToStream();
+            MemoryStream ms = new MemoryStream(steam);
+            response.Content = new StreamContent(ms);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = HttpUtility.UrlEncode("物业费.xlsx")
+            };
+            return response;
         }
     }
 }

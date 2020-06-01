@@ -11,6 +11,12 @@ namespace CitySouth.Data.Models.Mapping
             this.HasKey(t => t.CarId);
 
             // Properties
+            this.Property(t => t.UserName)
+                .HasMaxLength(50);
+
+            this.Property(t => t.Phone)
+                .HasMaxLength(50);
+
             this.Property(t => t.Brand)
                 .HasMaxLength(50);
 
@@ -27,6 +33,8 @@ namespace CitySouth.Data.Models.Mapping
             this.ToTable("OwnerCar");
             this.Property(t => t.CarId).HasColumnName("CarId");
             this.Property(t => t.OwnerId).HasColumnName("OwnerId");
+            this.Property(t => t.UserName).HasColumnName("UserName");
+            this.Property(t => t.Phone).HasColumnName("Phone");
             this.Property(t => t.Brand).HasColumnName("Brand");
             this.Property(t => t.Model).HasColumnName("Model");
             this.Property(t => t.CarNumber).HasColumnName("CarNumber");

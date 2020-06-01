@@ -56,6 +56,7 @@
     <Compile Include="HouseBatch.cs" />
     <Compile Include="LoginModel.cs" />
     <Compile Include="Menus.cs" />
+    <Compile Include="Models\ApplyLeave.cs" />
     <Compile Include="Models\Article.cs" />
     <Compile Include="Models\CitySouthContext.cs" />
     <Compile Include="Models\CostConfig.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="Models\GoodsStorage.cs" />
     <Compile Include="Models\HandHouse.cs" />
     <Compile Include="Models\House.cs" />
+    <Compile Include="Models\Mapping\ApplyLeaveMap.cs" />
     <Compile Include="Models\Mapping\ArticleMap.cs" />
     <Compile Include="Models\Mapping\CostConfigMap.cs" />
     <Compile Include="Models\Mapping\ElseCostMap.cs" />
@@ -90,6 +92,7 @@
     <Compile Include="Models\Mapping\OwnerCarMap.cs" />
     <Compile Include="Models\Mapping\OwnerFamilyMap.cs" />
     <Compile Include="Models\Mapping\OwnerMap.cs" />
+    <Compile Include="Models\Mapping\OwnerPropertyExpireLogMap.cs" />
     <Compile Include="Models\Mapping\ParkingMap.cs" />
     <Compile Include="Models\Mapping\PostMap.cs" />
     <Compile Include="Models\Mapping\PropertyMap.cs" />
@@ -109,6 +112,7 @@
     <Compile Include="Models\Owner.cs" />
     <Compile Include="Models\OwnerCar.cs" />
     <Compile Include="Models\OwnerFamily.cs" />
+    <Compile Include="Models\OwnerPropertyExpireLog.cs" />
     <Compile Include="Models\Parking.cs" />
     <Compile Include="Models\Post.cs" />
     <Compile Include="Models\Property.cs" />

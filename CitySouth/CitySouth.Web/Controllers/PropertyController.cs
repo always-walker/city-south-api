@@ -278,5 +278,77 @@ namespace CitySouth.Web.Controllers
             }
             return Request.CreateErrorResponse(HttpStatusCode.NotFound, "");
         }
+        [HttpPost]
+        [Author("property.export")]
+        public HttpResponseMessage Export([FromBody]SearchModel model)
+        {
+            var a = from property in db.Properties
+                    join b in db.Owners on property.OwnerId equals b.OwnerId
+                    join c in db.Houses on b.HouseId equals c.HouseId
+                    join d in db.Estates on c.EstateId equals d.EstateId
+                    select new
+                    {
+                        d.EstateName,
+                        c.EstateId,
+                        c.HouseNo,
+                        c.Model,
+                        c.HouseType,
+                        c.Floorage,
+                        b.OwnerName,
+                        b.CheckInName,
+                        b.Phone,
+                        b.PropertyExpireDate,
+                        property
+                    };
+            if (model.FkId != null && model.FkId > 0)
+                a = a.Where(w => w.EstateId == model.FkId);
+            else if (!user.IsSuper)
+                a = a.Where(w => user.EstateIds.Contains(w.EstateId));
+            if (!string.IsNullOrEmpty(model.KeyWord))
+                a = a.Where(w => w.HouseNo.Contains(model.KeyWord) || w.Model.Contains(model.KeyWord) || w.OwnerName.Contains(model.KeyWord) || w.CheckInName.Contains(model.KeyWord) || w.Phone.Contains(model.KeyWord) || w.property.VoucherNo.Contains(model.KeyWord) || w.property.ReceiptNo.Contains(model.KeyWord) || w.property.Remark.Contains(model.KeyWord));
+            if (model.StartDate != null)
+                a = a.Where(w => w.property.CreateTime >= model.StartDate.Value);
+            if (model.EndDate != null)
+            {
+                model.EndDate = model.EndDate.Value.AddDays(1);
+                a = a.Where(w => w.property.CreateTime < model.EndDate.Value);
+            }
+            var list = from b in a
+                       select new
+                       {
+                           项目名称 = b.EstateName,
+                           房号 = b.HouseNo,
+                           户型 = b.Model,
+                           建筑面积 = b.Floorage,
+                           业主姓名 = b.OwnerName,
+                           缴费人姓名 = b.property.PayerName,
+                           联系电话 = b.Phone,
+                           物业到期日 = b.PropertyExpireDate,
+                           单价 = b.property.UnitPrice,
+                           缴费月数 = b.property.MonthCount,
+                           缴费金额 = b.property.Amount,
+                           缴费时间 = b.property.CreateTime,
+                           支付时间 = b.property.PayTime,
+                           服务开始时间 = b.property.StartDate,
+                           服务结束时间 = b.property.EndDate,
+                           收据号码 = b.property.ReceiptNo,
+                           凭证号码 = b.property.VoucherNo,
+                           操作员 = b.property.OprationName,
+                           缴费方式 = b.property.PayWay,
+                           备注 = b.property.Remark
+                       };
+            DataTable dt = Common.ToDataTable(list.ToList());
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            Excel excel = new Excel(dt);
+            byte[] steam = excel.ToStream();
+            MemoryStream ms = new MemoryStream(steam);
+            response.Content = new StreamContent(ms);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = HttpUtility.UrlEncode("物业费.xlsx")
+            };
+            return response;
+        }
     }
 }

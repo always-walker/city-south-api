@@ -10,7 +10,7 @@ namespace CitySouth.Data.Models
         public string PayerName { get; set; }
         public int ConfigId { get; set; }
         public decimal UnitPrice { get; set; }
-        public int MonthCount { get; set; }
+        public double MonthCount { get; set; }
         public decimal Amount { get; set; }
         public System.DateTime CreateTime { get; set; }
         public Nullable<System.DateTime> PayTime { get; set; }

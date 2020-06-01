@@ -18,6 +18,7 @@ namespace CitySouth.Data.Models
         public string UnitName { get; set; }
         public Nullable<double> LastQuantity { get; set; }
         public Nullable<double> Quantity { get; set; }
+        public Nullable<double> ShareQuantity { get; set; }
         public decimal Amount { get; set; }
         public string ReceiptNo { get; set; }
         public string VoucherNo { get; set; }

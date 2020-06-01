@@ -6,7 +6,9 @@ namespace CitySouth.Data.Models
     public partial class OwnerCar
     {
         public int CarId { get; set; }
-        public int OwnerId { get; set; }
+        public Nullable<int> OwnerId { get; set; }
+        public string UserName { get; set; }
+        public string Phone { get; set; }
         public string Brand { get; set; }
         public string Model { get; set; }
         public string CarNumber { get; set; }

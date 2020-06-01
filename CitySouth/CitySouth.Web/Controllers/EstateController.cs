@@ -56,7 +56,7 @@ namespace CitySouth.Web.Controllers
             else
             {
                 Estate newEstate = db.Estates.FirstOrDefault(w => w.EstateId == estate.EstateId);
-                Ricky.ObjectCopy.Copy<Estate>(estate, newEstate);
+                Ricky.ObjectCopy.Copy<Estate>(estate, newEstate, new string[] { "ImageList", "Introduct" });
                 db.SaveChanges();
             }
             result["message"] = message;

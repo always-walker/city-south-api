@@ -145,8 +145,10 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\ApiAuthorizeAttribute.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Controllers\ArticleController.cs" />
     <Compile Include="Controllers\AuthorController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\CarController.cs" />
     <Compile Include="Controllers\CategoryController.cs" />
     <Compile Include="Controllers\CostConfigController.cs" />
     <Compile Include="Controllers\ElseCostController.cs" />
@@ -155,6 +157,7 @@
     <Compile Include="Controllers\GoodsController.cs" />
     <Compile Include="Controllers\HandHouseController.cs" />
     <Compile Include="Controllers\HouseController.cs" />
+    <Compile Include="Controllers\LeaveController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\OwnerController.cs" />
     <Compile Include="Controllers\ParkingController.cs" />

@@ -10,5 +10,7 @@ namespace CitySouth.Data.Models
         public List<OwnerFamily> FamilyList { get; set; }
         [NotMapped]
         public List<OwnerCar> CarList { get; set; }
+        [NotMapped]
+        public string ExpireModifyRemark { get; set; }
     }
 }
