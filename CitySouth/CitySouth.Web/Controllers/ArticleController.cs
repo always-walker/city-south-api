@@ -69,6 +69,15 @@ namespace CitySouth.Web.Controllers
             result["message"] = message;
             return result;
         }
+        [HttpPut]
+        [Author("article.manage")]
+        public Dictionary<string, object> ChangeShow([FromBody]Article article)
+        {
+            Article newArticle = db.Articles.FirstOrDefault(w => w.ArticleId == article.ArticleId);
+            newArticle.IsShow = article.IsShow;
+            db.SaveChanges();
+            return result;
+        }
         [HttpDelete]
         [Author("article.manage")]
         public Dictionary<string, object> Delete(int id)

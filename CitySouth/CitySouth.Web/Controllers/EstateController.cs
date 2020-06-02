@@ -62,6 +62,15 @@ namespace CitySouth.Web.Controllers
             result["message"] = message;
             return result;
         }
+        [HttpPut]
+        [Author("estate.manage")]
+        public Dictionary<string, object> ChangeIntroduct([FromBody]Estate estate)
+        {
+            Estate newEstate = db.Estates.FirstOrDefault(w => w.EstateId == estate.EstateId);
+            newEstate.Introduct = estate.Introduct;
+            db.SaveChanges();
+            return result;
+        }
         [HttpDelete]
         [Author("estate.manage")]
         public Dictionary<string, object> Delete(int id)
