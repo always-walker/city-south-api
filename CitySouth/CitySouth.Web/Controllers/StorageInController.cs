@@ -7,41 +7,25 @@ using System.Web.Http;
 using CitySouth.Data.Models;
 using CitySouth.Data;
 
+
 namespace CitySouth.Web.Controllers
 {
-    public class GoodsController : BaseController
+    public class StorageInController : BaseController
     {
-        private void setCategoryIds(List<int> CategoryIds, List<GoodsCategory> categorys, int ParentCategoryId)
-        {
-            CategoryIds.Add(ParentCategoryId);
-            List<GoodsCategory> childCategorys = categorys.Where(w => w.ParentCategoryId == ParentCategoryId).ToList();
-            foreach (GoodsCategory category in childCategorys)
-            {
-                setCategoryIds(CategoryIds, categorys, category.CategoryId);
-            }
-        }
         [HttpPost]
-        [Author("goods.list")]
+        [Author("storage-in.list")]
         public Dictionary<string, object> Index([FromBody]SearchModel model)
         {
-            List<int> CategoryIds = new List<int>();
-            if (model.FkId != null && model.FkId > 0)
-            {
-                List<GoodsCategory> categorys = db.GoodsCategories.ToList();
-                setCategoryIds(CategoryIds, categorys, model.FkId.Value);
-            }
-            var a = from b in db.Goods select b;
-            if (CategoryIds.Count > 0)
-                a = a.Where(w => CategoryIds.Contains(w.CategoryId));
+            var a = from b in db.GoodsReceipts select b;
             if (!string.IsNullOrEmpty(model.KeyWord))
-                a = a.Where(w => w.GoodsName.Contains(model.KeyWord) || w.GoodsNo.Contains(model.KeyWord));
+                a = a.Where(w => w.ReceiptNo.Contains(model.KeyWord) || w.Purchaser.Contains(model.KeyWord));
             result["count"] = a.Count();
             var list = a.ToList();
             result["datalist"] = list;
             return result;
         }
         [HttpPost]
-        [Author("goods.manage")]
+        [Author("storage-in.manage")]
         public Dictionary<string, object> Add([FromBody]Good good)
         {
             if (string.IsNullOrEmpty(good.GoodsNo))
@@ -68,7 +52,7 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpPut]
-        [Author("goods.manage")]
+        [Author("storage-in.manage")]
         public Dictionary<string, object> Modify([FromBody]Good good)
         {
             if (string.IsNullOrEmpty(good.GoodsNo))
@@ -99,7 +83,7 @@ namespace CitySouth.Web.Controllers
             return result;
         }
         [HttpDelete]
-        [Author("goods.manage")]
+        [Author("storage-in.manage")]
         public Dictionary<string, object> Delete(int id)
         {
             if (db.GoodsStorages.Count(w => w.GoodsId == id) > 0

@@ -35,6 +35,7 @@ namespace CitySouth.Data.Models.Mapping
             this.Property(t => t.Passer).HasColumnName("Passer");
             this.Property(t => t.PassStatus).HasColumnName("PassStatus");
             this.Property(t => t.PassDate).HasColumnName("PassDate");
+            this.Property(t => t.IsDelete).HasColumnName("IsDelete");
         }
     }
 }

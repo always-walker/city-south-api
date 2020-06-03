@@ -164,6 +164,7 @@
     <Compile Include="Controllers\PostController.cs" />
     <Compile Include="Controllers\PropertyController.cs" />
     <Compile Include="Controllers\RoleController.cs" />
+    <Compile Include="Controllers\StorageInController.cs" />
     <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Controllers\WaterAndElectricityController.cs" />

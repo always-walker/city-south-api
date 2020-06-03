@@ -11,9 +11,6 @@ namespace CitySouth.Data.Models.Mapping
             this.HasKey(t => t.GoodsId);
 
             // Properties
-            this.Property(t => t.GoodsId)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
-
             this.Property(t => t.GoodsNo)
                 .IsRequired()
                 .HasMaxLength(50);

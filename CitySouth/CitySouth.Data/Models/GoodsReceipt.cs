@@ -15,5 +15,6 @@ namespace CitySouth.Data.Models
         public System.DateTime SubmitDate { get; set; }
         public string StorageChecker { get; set; }
         public System.DateTime InStorageDate { get; set; }
+        public bool IsDelete { get; set; }
     }
 }

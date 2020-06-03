@@ -11,9 +11,6 @@ namespace CitySouth.Data.Models.Mapping
             this.HasKey(t => t.ReceiptId);
 
             // Properties
-            this.Property(t => t.ReceiptId)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
-
             this.Property(t => t.ReceiptNo)
                 .HasMaxLength(50);
 
@@ -44,6 +41,7 @@ namespace CitySouth.Data.Models.Mapping
             this.Property(t => t.SubmitDate).HasColumnName("SubmitDate");
             this.Property(t => t.StorageChecker).HasColumnName("StorageChecker");
             this.Property(t => t.InStorageDate).HasColumnName("InStorageDate");
+            this.Property(t => t.IsDelete).HasColumnName("IsDelete");
         }
     }
 }

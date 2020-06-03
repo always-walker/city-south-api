@@ -14,5 +14,6 @@ namespace CitySouth.Data.Models
         public string Passer { get; set; }
         public int PassStatus { get; set; }
         public Nullable<System.DateTime> PassDate { get; set; }
+        public bool IsDelete { get; set; }
     }
 }
